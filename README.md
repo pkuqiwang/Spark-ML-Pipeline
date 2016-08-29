@@ -61,18 +61,22 @@ import org.apache.spark.ml.classification.LogisticRegression
 import org.apache.spark.ml.feature.Binarizer
 import org.apache.spark.ml.feature.VectorSlicer
 import org.apache.spark.ml.Pipeline
+import org.apache.spark.ml.feature.StandardScaler
+
+//vestor slicer
+val slicer = new VectorSlicer().setInputCol("rawFeatures").setOutputCol("slicedfeatures").setNames(Array("MonthCat", "DayofMonthCat", "DayOfWeekCat", "UniqueCarrierCat", "DepTime", "ArrTime", "ActualElapsedTime", "AirTime", "DepDelay", "Distance"))
+
+//scale the features
+val scaler = new StandardScaler().setInputCol("slicedfeatures").setOutputCol("features").setWithStd(true).setWithMean(true)
 
 //labels for binary classifier
 val binarizerClassifier = new Binarizer().setInputCol("ArrDelay").setOutputCol("binaryLabel").setThreshold(15.0)
-
-//vestor slicer
-val slicer = new VectorSlicer().setInputCol("rawFeaturesIndexed").setOutputCol("features").slicer.setNames(Array("f2", "f3"))
 
 //logistic regression
 val lr = new LogisticRegression().setMaxIter(10).setRegParam(0.3).setElasticNetParam(0.8).setLabelCol("binaryLabel").setFeaturesCol("features")
 
 // Chain indexers and tree in a Pipeline
-val lrPipeline = new Pipeline().setStages(Array(monthIndexer, DayofMonthIndexer, DayOfWeekIndexer, UniqueCarrierIndexer, OriginIndexer, assembler, slicer, binarizerClassifier, lr))
+val lrPipeline = new Pipeline().setStages(Array(monthIndexer, DayofMonthIndexer, DayOfWeekIndexer, UniqueCarrierIndexer, OriginIndexer, assembler, slicer, scaler, binarizerClassifier, lr))
 
 // Train model. 
 val lrModel = lrPipeline.fit(trainingData)
@@ -81,7 +85,7 @@ val lrModel = lrPipeline.fit(trainingData)
 val lrPredictions = lrModel.transform(testingData)
 
 // Select example rows to display.
-lrPredictions.select("predictedLabel", "label", "features").show(5)
+lrPredictions.select("prediction", "binaryLabel", "features").show(20)
 ```
 
 ```
@@ -115,5 +119,5 @@ val dtModel = dtPipeline.fit(trainingData)
 val dtPredictions = dtModel.transform(testingData)
 
 // Select example rows to display.
-dtPredictions.select("predictedLabel", "label", "features").show(5)
+dtPredictions.select("prediction", "multiClassLabel", "features").show(20)
 ```
